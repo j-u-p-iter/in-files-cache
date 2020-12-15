@@ -1,0 +1,25 @@
+{
+  "name": "@j.u.p.iter/in-files-cache",
+  "version": "0.0.0-semantically-released",
+  "description": "The tool to cache data in files",
+  "main": "dist/lib/index.js",
+  "typings": "dist/types",
+  "repository": "git@github.com:j-u-p-iter/in-files-cache.git",
+  "author": "Leontyev Kirill (j.u.p.iter) <pn79122821224@gmail.com> (http://j-u-p-iter.ru/)",
+  "license": "MIT",
+  "scripts": {
+    "commit": "jupiter-scripts precommit --allowJs",
+    "build": "jupiter-scripts build",
+    "start": "yarn run build --watch",
+    "lint": "jupiter-scripts lint --format codeFrame",
+    "lint:fix": "yarn run lint --fix",
+    "test": "jupiter-scripts test"
+  },
+  "devDependencies": {
+    "@j.u.p.iter/jupiter-scripts": "^1.17.0"
+  },
+  "dependencies": {
+    "@j.u.p.iter/find-path-to-file": "^1.0.1",
+    "fs-extra": "^9.0.1"
+  }
+}
