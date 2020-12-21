@@ -3,6 +3,20 @@ import crypto from "crypto";
 import { readFileSync } from "fs-extra";
 import path from "path";
 
+/**
+ * Cache params are params we use to create file paths
+ *   for files with cache. These are the next params:
+ *
+ * - filePath - path to the original file (virtual or real);
+ *
+ * - fileContent - content of the original file, compiled version of which we want to cache;
+ *
+ * - fileExtension - result extension of the cache file we want to read/write. We need to pass
+ *   it, cause the original "real" file and the result cache file can have different extension.
+ *   For example, the original file has ".ts" extension and the result file has ".js" extension.
+ *   If the file is virtual, in many cases, there's no extension at all.
+ *
+ */
 export interface CacheParams {
   /**
    * filePath should be relative to the cacheFolderPath
@@ -24,6 +38,28 @@ export enum SystemErrorCode {
   NO_FILE_OR_DIRECTORY = "ENOENT"
 }
 
+/**
+ * The class supposes to work with two different types of files.
+ *
+ * The first type is called "virtual". This is the type, that doesn't present
+ *   in the file system and content for this file comes from user's input (for example, from repl).
+ *   In this case we still need some file path (let's say file id) to create reasonable file path
+ *   for the file with cache. So, the user of this class still need to pass some file path for
+ *   the content we want's to cache.
+ *
+ * The second type is called "real". This is the type, that really presents in the file system.
+ *   In this case we don't provide file's content to the methods we use to work with cache,
+ *   when we need to read/write cache. The class tries to read this content internally.
+ *
+ * So, one more time:
+ *   - for the "virtual" types of files we should provide both file path and
+ *     file content params to generate correct file path to the result file with cache;
+ *
+ *   - for the "real" types of files we should provide only file path, because the
+ *     content will be read by the system internally.
+ *
+ */
+
 export class InFilesCache {
   private readFile(filePath) {
     try {
@@ -44,7 +80,7 @@ export class InFilesCache {
    *   (relative the app root folder).
    *
    * We need to make it relative if it's absolute, to be
-   *   able to work with this in consistent way.
+   *   able to work with this in a consistent way.
    *
    */
   private prepareCacheFolderPath(appRootFolderPath) {
@@ -71,12 +107,12 @@ export class InFilesCache {
     };
   }
 
-  /** 
-   * Detects the root path to the project by location of 
+  /**
+   * Detects the root path to the project by location of
    *   the "package.json" file internally.
    *
    */
-  private async getAppRootFolderPath = () => {
+  private async getAppRootFolderPath() {
     const { dirPath } = await findPathToFile("package.json");
 
     return dirPath;
@@ -86,18 +122,18 @@ export class InFilesCache {
    * The full absolute path the cache file consists on several main parts:
    * - pathToAppRoot + pathToCacheFolder + fileToCacheFolder + cachedFileName.
    *
-   * - pathToAppRoot - the path to the root folder of the application, 
+   * - pathToAppRoot - the path to the root folder of the application,
    *   that class determines internally;
    *
-   * - pathToCacheFolder - path to the cache folder, that is passed 
-   *   to the class during it's initialization and, if it's necessary, 
+   * - pathToCacheFolder - path to the cache folder, that is passed
+   *   to the class during it's initialization and, if it's necessary,
    *   modified from absolute to the relative to the app root;
    *
-   * - fileToCacheFolder - the path to the folder for the concrete 
+   * - fileToCacheFolder - the path to the folder for the concrete
    *   file, that is described recently;
    *
-   * - cachedFileName - the name of the file, that contains the cache 
-   *   for the file with concrete path and content; if you update content - 
+   * - cachedFileName - the name of the file, that contains the cache
+   *   for the file with concrete path and content; if you update content -
    *   the new file will be generated in the same fileToCacheFolder.
    *
    */
@@ -117,7 +153,7 @@ export class InFilesCache {
       fileExtension
     );
     const cacheFolderName = this.generateCacheFolderName(filePath);
-    const appRootFolderPath = await getAppRootFolderPath();
+    const appRootFolderPath = await this.getAppRootFolderPath();
     const cacheFolderPath = this.prepareCacheFolderPath(appRootFolderPath);
 
     return path.join(
@@ -128,6 +164,10 @@ export class InFilesCache {
     );
   }
 
+  /**
+   * The cacheFolderPath should be relative to the
+   *   application root folder or absolute.
+   */
   constructor(private cacheFolderPath) {}
 
   /**
@@ -142,7 +182,7 @@ export class InFilesCache {
    * The result folder name will look like this:
    *   - path-new-path-fileName
    *
-   * All cache for this file will be stored into the folder with this name. 
+   * All cache for this file will be stored into the folder with this name.
    *   If we need to drop the cache for this file we'll just remove this folder.
    *
    * We expose this method for testing purposes.
