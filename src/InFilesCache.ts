@@ -71,6 +71,36 @@ export class InFilesCache {
     };
   }
 
+  /** 
+   * Detects the root path to the project by location of 
+   *   the "package.json" file internally.
+   *
+   */
+  private async getAppRootFolderPath = () => {
+    const { dirPath } = await findPathToFile("package.json");
+
+    return dirPath;
+  }
+
+  /**
+   * The full absolute path the cache file consists on several main parts:
+   * - pathToAppRoot + pathToCacheFolder + fileToCacheFolder + cachedFileName.
+   *
+   * - pathToAppRoot - the path to the root folder of the application, 
+   *   that class determines internally;
+   *
+   * - pathToCacheFolder - path to the cache folder, that is passed 
+   *   to the class during it's initialization and, if it's necessary, 
+   *   modified from absolute to the relative to the app root;
+   *
+   * - fileToCacheFolder - the path to the folder for the concrete 
+   *   file, that is described recently;
+   *
+   * - cachedFileName - the name of the file, that contains the cache 
+   *   for the file with concrete path and content; if you update content - 
+   *   the new file will be generated in the same fileToCacheFolder.
+   *
+   */
   private async generatePathToCacheFile(originalCacheParams: CacheParams) {
     const { filePath, fileExtension, fileContent } = this.prepareCacheParams(
       originalCacheParams
@@ -87,7 +117,7 @@ export class InFilesCache {
       fileExtension
     );
     const cacheFolderName = this.generateCacheFolderName(filePath);
-    const { dirPath: appRootFolderPath } = await findPathToFile("package.json");
+    const appRootFolderPath = await getAppRootFolderPath();
     const cacheFolderPath = this.prepareCacheFolderPath(appRootFolderPath);
 
     return path.join(
@@ -105,6 +135,15 @@ export class InFilesCache {
    *   we connect folders names and file name with "-"
    *   to create cache folder name. Otherwise we just
    *   use file's name without extension as folder name.
+   *
+   * Let's say path to the file, compiled code of which we want to cache, looks like this:
+   *   - /path/new-path/fileName.js
+   *
+   * The result folder name will look like this:
+   *   - path-new-path-fileName
+   *
+   * All cache for this file will be stored into the folder with this name. 
+   *   If we need to drop the cache for this file we'll just remove this folder.
    *
    * We expose this method for testing purposes.
    */
