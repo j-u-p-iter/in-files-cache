@@ -63,7 +63,7 @@ export enum SystemErrorCode {
 export class InFilesCache {
   private readFile(filePath) {
     try {
-      const fileContent = readFileSync(filePath);
+      const fileContent = readFileSync(filePath, 'utf8');
 
       return fileContent;
     } catch (error) {
@@ -83,27 +83,28 @@ export class InFilesCache {
    *   able to work with this in a consistent way.
    *
    */
-  private prepareCacheFolderPath(appRootFolderPath) {
+  private absolutePathToRelative(pathToModify, appRootFolderPath) {
     /**
      * appRootFolderPath is always absolute path.
-     *   If originalCacheFolderPath is also an absolute,
+     *   If pathToModify is also an absolute,
      *   we get the relative path as result.
      *
      */
-    return this.cacheFolderPath.replace(appRootFolderPath, "");
+    return pathToModify.replace(appRootFolderPath, "");
   }
 
-  private prepareCacheParams(originalCacheParams: CacheParams): CacheParams {
+  private prepareCacheParams(originalCacheParams: CacheParams, appRootFolderPath): CacheParams {
     const { filePath, fileContent, fileExtension } = originalCacheParams;
 
+    const resultFilePath = this.absolutePathToRelative(filePath, appRootFolderPath);
     const resultFileContent = fileContent
       ? fileContent
-      : this.readFile(filePath);
+      : this.readFile(resultFilePath);
 
     return {
-      filePath,
       fileExtension,
-      fileContent: resultFileContent
+      filePath: resultFilePath,
+      fileContent: resultFileContent,
     };
   }
 
@@ -138,8 +139,10 @@ export class InFilesCache {
    *
    */
   private async generatePathToCacheFile(originalCacheParams: CacheParams) {
+    const appRootFolderPath = await this.getAppRootFolderPath();
     const { filePath, fileExtension, fileContent } = this.prepareCacheParams(
-      originalCacheParams
+      originalCacheParams,
+      appRootFolderPath,
     );
 
     /**
@@ -153,8 +156,7 @@ export class InFilesCache {
       fileExtension
     );
     const cacheFolderName = this.generateCacheFolderName(filePath);
-    const appRootFolderPath = await this.getAppRootFolderPath();
-    const cacheFolderPath = this.prepareCacheFolderPath(appRootFolderPath);
+    const cacheFolderPath = this.absolutePathToRelative(this.cacheFolderPath, appRootFolderPath);
 
     return path.join(
       appRootFolderPath,
@@ -209,7 +211,7 @@ export class InFilesCache {
    * We expose this method for testing purposes.
    */
   public generateCacheFileName(fileContent, fileExtension) {
-    return `${this.generateHash(fileContent)}.${fileExtension}`;
+    return `${this.generateHash(fileContent)}${fileExtension}`;
   }
 
   /**
