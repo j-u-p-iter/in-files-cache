@@ -1,6 +1,6 @@
 import { findPathToFile } from "@j.u.p.iter/find-path-to-file";
 import crypto from "crypto";
-import { outputFileSync, readFileSync } from "fs-extra";
+import { outputFileSync, readFileSync, removeSync } from "fs-extra";
 import path from "path";
 
 /**
@@ -137,6 +137,16 @@ export class InFilesCache {
     const { dirPath } = await findPathToFile("package.json");
 
     return dirPath;
+  }
+
+  private async generatePathToFileCacheFolder(
+    cacheParams: CacheParams
+  ): Promise<string> {
+    const fileCacheFolder = path.dirname(
+      await this.generatePathToCacheFile(cacheParams)
+    );
+
+    return fileCacheFolder;
   }
 
   /**
@@ -288,5 +298,13 @@ export class InFilesCache {
     const pathToCacheFile = await this.generatePathToCacheFile(cacheParams);
 
     return outputFileSync(pathToCacheFile, contentToCache);
+  }
+
+  public async clear(cacheParams: CacheParams) {
+    const fileCacheFolder = await this.generatePathToFileCacheFolder(
+      cacheParams
+    );
+
+    return removeSync(fileCacheFolder);
   }
 }

@@ -1,5 +1,5 @@
 import path from 'path';
-import { readFile, outputFile, remove } from 'fs-extra';
+import { readFile, outputFile, remove, existsSync } from 'fs-extra';
 import { InFilesCache } from './InFilesCache';
 
 describe('InFilesCache', () => {
@@ -66,19 +66,13 @@ describe('InFilesCache', () => {
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
         const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
+        const realFilePath = path.resolve(__dirname, '..', fileName);
 
         /**
          * Creates "real" file the class should read content from. 
          *
          */
-        await outputFile(
-          path.resolve(
-            __dirname,
-            '..',
-            fileName,
-          ),
-          fileContent,
-        );
+        await outputFile(realFilePath, fileContent);
 
         /**
          * Creates cache file with fileContent as InFilesCache does. 
@@ -162,19 +156,13 @@ describe('InFilesCache', () => {
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
         const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
+        const realFilePath = path.resolve(__dirname, '..', fileName);
 
         /**
          * Creates "real" file the class should read content from. 
          *
          */
-        await outputFile(
-          path.resolve(
-            __dirname,
-            '..',
-            fileName,
-          ),
-          fileContent,
-        );
+        await outputFile(realFilePath, fileContent);
        
         await inFilesCache.set({
           fileExtension,
@@ -197,6 +185,101 @@ describe('InFilesCache', () => {
         expect(cacheFile).toBe(compiledFileContent);
 
         await remove(cacheFolderPath);
+
+        await remove(realFilePath); 
+      });
+    });
+  });
+
+  describe('clear()', () => {
+    describe('with fileContent', () => {
+      it('removes cache for file', async () => {
+        const fileContent = 'some content';
+        const fileName = 'someFile.txt'
+        const fileExtension = '.txt'
+
+        const cacheFolderPath = path.join(__dirname, '../src/cache');
+        const inFilesCache = new InFilesCache(cacheFolderPath);
+        const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
+        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
+        const cacheFilePath = path.join(cacheFolderPath, cacheFolderName, cacheFileName);
+
+        /**
+         * Creates cache file with fileContent as InFilesCache does. 
+         *
+         */
+        await outputFile(cacheFilePath, fileContent);
+
+        /**
+         * We need to be sure, that we've definitely
+         *   created the file with the cache
+         *
+         */
+        expect(existsSync(cacheFilePath)).toBe(true);
+
+        /**
+         * Here we pass fileContent, because the file is "virtual",
+         *   but we need fileContent to generate correct result fileName.
+         *
+         */
+        await inFilesCache.clear({
+          filePath: fileName,
+          fileContent,
+          fileExtension,
+        });
+
+        expect(existsSync(cacheFilePath)).toBe(false);
+
+        await remove(cacheFolderPath);
+      });
+    });
+
+    describe('without fileContent', () => {
+      it('removes cache for file', async () => {
+        const fileContent = 'some content';
+        const fileName = 'someFile.txt'
+        const fileExtension = '.txt'
+
+        const cacheFolderPath = path.join(__dirname, '../src/cache');
+        const inFilesCache = new InFilesCache(cacheFolderPath);
+        const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
+        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
+        const cacheFilePath = path.join(cacheFolderPath, cacheFolderName, cacheFileName);
+        const realFilePath = path.resolve(__dirname, '..', fileName);
+
+        /**
+         * Creates "real" file the class should read content from. 
+         *
+         */
+        await outputFile(realFilePath, fileContent);
+
+        /**
+         * Creates cache file with fileContent as InFilesCache does. 
+         *
+         */
+        await outputFile(cacheFilePath, fileContent);
+
+        /**
+         * We need to be sure, that we've definitely
+         *   created the file with the cache
+         *
+         */
+        expect(existsSync(cacheFilePath)).toBe(true);
+
+        /**
+         * Here we pass fileContent, because the file is "virtual",
+         *   but we need fileContent to generate correct result fileName.
+         *
+         */
+        await inFilesCache.clear({
+          filePath: fileName,
+          fileExtension,
+        });
+
+        expect(existsSync(cacheFilePath)).toBe(false);
+
+        await remove(cacheFolderPath);
+        await remove(realFilePath);
       });
     });
   });
