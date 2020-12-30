@@ -1,6 +1,6 @@
 import { findPathToFile } from "@j.u.p.iter/find-path-to-file";
 import crypto from "crypto";
-import { readFileSync } from "fs-extra";
+import { outputFileSync, readFileSync } from "fs-extra";
 import path from "path";
 
 /**
@@ -14,12 +14,13 @@ import path from "path";
  * - fileExtension - result extension of the cache file we want to read/write. We need to pass
  *   it, cause the original "real" file and the result cache file can have different extension.
  *   For example, the original file has ".ts" extension and the result file has ".js" extension.
- *   If the file is virtual, in many cases, there's no extension at all.
+ *   If the file is "virtual", in many cases, there's no extension at all.
  *
  */
 export interface CacheParams {
   /**
    * filePath should be relative to the cacheFolderPath
+   *
    */
   filePath: string;
   fileContent?: string;
@@ -28,12 +29,13 @@ export interface CacheParams {
 
 /**
  * TODO: to extract into a separate package.
+ *
  */
 export enum SystemErrorCode {
   /**
    * ENOENT (No such file or directory): Commonly raised by fs operations
-   * to indicate that a component of the specified pathname does not exist.
-   * No entity (file or directory) could be found by the given path.
+   *   to indicate that a component of the specified pathname does not exist.
+   *   No entity (file or directory) could be found by the given path.
    */
   NO_FILE_OR_DIRECTORY = "ENOENT"
 }
@@ -45,7 +47,7 @@ export enum SystemErrorCode {
  *   in the file system and content for this file comes from user's input (for example, from repl).
  *   In this case we still need some file path (let's say file id) to create reasonable file path
  *   for the file with cache. So, the user of this class still need to pass some file path for
- *   the content we want's to cache.
+ *   the content we want to cache.
  *
  * The second type is called "real". This is the type, that really presents in the file system.
  *   In this case we don't provide file's content to the methods we use to work with cache,
@@ -63,7 +65,7 @@ export enum SystemErrorCode {
 export class InFilesCache {
   private readFile(filePath) {
     try {
-      const fileContent = readFileSync(filePath, 'utf8');
+      const fileContent = readFileSync(filePath, "utf8");
 
       return fileContent;
     } catch (error) {
@@ -77,7 +79,7 @@ export class InFilesCache {
 
   /**
    * Cache folder path can be either absolute or relative
-   *   (relative the app root folder).
+   *   (relative to the app root folder).
    *
    * We need to make it relative if it's absolute, to be
    *   able to work with this in a consistent way.
@@ -87,16 +89,34 @@ export class InFilesCache {
     /**
      * appRootFolderPath is always absolute path.
      *   If pathToModify is also an absolute,
-     *   we get the relative path as result.
+     *   we get the relative path to the app root folder in the end.
      *
      */
     return pathToModify.replace(appRootFolderPath, "");
   }
 
-  private prepareCacheParams(originalCacheParams: CacheParams, appRootFolderPath): CacheParams {
+  private prepareCacheParams(
+    originalCacheParams: CacheParams,
+    appRootFolderPath
+  ): CacheParams {
     const { filePath, fileContent, fileExtension } = originalCacheParams;
 
-    const resultFilePath = this.absolutePathToRelative(filePath, appRootFolderPath);
+    /**
+     * filePath can be eigher relative (to the app root folder) or absolute.
+     *   We need to make it relative to be able to work with it in the consistent
+     *   way in the end.
+     *
+     */
+    const resultFilePath = this.absolutePathToRelative(
+      filePath,
+      appRootFolderPath
+    );
+
+    /**
+     * For the "virtual" files we pass the content of the file
+     *   explicitly, because in reality there's no such a file.
+     *
+     */
     const resultFileContent = fileContent
       ? fileContent
       : this.readFile(resultFilePath);
@@ -104,7 +124,7 @@ export class InFilesCache {
     return {
       fileExtension,
       filePath: resultFilePath,
-      fileContent: resultFileContent,
+      fileContent: resultFileContent
     };
   }
 
@@ -120,8 +140,9 @@ export class InFilesCache {
   }
 
   /**
-   * The full absolute path the cache file consists on several main parts:
-   * - pathToAppRoot + pathToCacheFolder + fileToCacheFolder + cachedFileName.
+   * The full absolute path the cache file consists of several main parts:
+   *
+   * - pathToAppRoot + pathToCacheFolder + cacheFolderName + cachedFileName.
    *
    * - pathToAppRoot - the path to the root folder of the application,
    *   that class determines internally;
@@ -130,19 +151,20 @@ export class InFilesCache {
    *   to the class during it's initialization and, if it's necessary,
    *   modified from absolute to the relative to the app root;
    *
-   * - fileToCacheFolder - the path to the folder for the concrete
+   * - cacheFolderName - the path to the folder for the concrete
    *   file, that is described recently;
    *
    * - cachedFileName - the name of the file, that contains the cache
    *   for the file with concrete path and content; if you update content -
-   *   the new file will be generated in the same fileToCacheFolder.
+   *   the new file will be created in the same cacheFolderName.
    *
    */
   private async generatePathToCacheFile(originalCacheParams: CacheParams) {
     const appRootFolderPath = await this.getAppRootFolderPath();
+
     const { filePath, fileExtension, fileContent } = this.prepareCacheParams(
       originalCacheParams,
-      appRootFolderPath,
+      appRootFolderPath
     );
 
     /**
@@ -156,7 +178,10 @@ export class InFilesCache {
       fileExtension
     );
     const cacheFolderName = this.generateCacheFolderName(filePath);
-    const cacheFolderPath = this.absolutePathToRelative(this.cacheFolderPath, appRootFolderPath);
+    const cacheFolderPath = this.absolutePathToRelative(
+      this.cacheFolderPath,
+      appRootFolderPath
+    );
 
     return path.join(
       appRootFolderPath,
@@ -188,12 +213,18 @@ export class InFilesCache {
    *   If we need to drop the cache for this file we'll just remove this folder.
    *
    * We expose this method for testing purposes.
+   *
    */
   public generateCacheFolderName(filePath) {
     const tokens = filePath.split("/");
     const fileName = tokens.pop();
 
-    // removes file's extension
+    /**
+     * removes file's extension, because in many cases
+     *   an original file and a result file will have
+     *   different extensions (Example: .tsx vs .js).
+     *
+     */
     const fileNameWithoutExtension = fileName.replace(/\.\w+/, "");
 
     return tokens.length
@@ -209,6 +240,7 @@ export class InFilesCache {
    *   it will be enough just to remove this common folder.
    *
    * We expose this method for testing purposes.
+   *
    */
   public generateCacheFileName(fileContent, fileExtension) {
     return `${this.generateHash(fileContent)}${fileExtension}`;
@@ -250,5 +282,11 @@ export class InFilesCache {
     const pathToCacheFile = await this.generatePathToCacheFile(cacheParams);
 
     return this.readFile(pathToCacheFile);
+  }
+
+  public async set(cacheParams: CacheParams, contentToCache: string) {
+    const pathToCacheFile = await this.generatePathToCacheFile(cacheParams);
+
+    return outputFileSync(pathToCacheFile, contentToCache);
   }
 }
