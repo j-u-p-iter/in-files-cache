@@ -121,6 +121,18 @@ export class InFilesCache {
       ? fileContent
       : this.readFile(resultFilePath);
 
+    /**
+     * Content should be either passed as an argument
+     *   or read from file by file path.
+     *   If resultFileContent equals to null,
+     *   it means, there's no such a "real" file.
+     *   So, we throw an appropriate error.
+     *
+     */
+    if (!resultFileContent) {
+      throw new Error(`There is no such a file: ${resultFilePath}`);
+    }
+
     return {
       fileExtension,
       filePath: resultFilePath,
@@ -202,12 +214,6 @@ export class InFilesCache {
   }
 
   /**
-   * The cacheFolderPath should be relative to the
-   *   application root folder or absolute.
-   */
-  constructor(private cacheFolderPath) {}
-
-  /**
    * If filePath contains folders names,
    *   we connect folders names and file name with "-"
    *   to create cache folder name. Otherwise we just
@@ -222,10 +228,8 @@ export class InFilesCache {
    * All cache for this file will be stored into the folder with this name.
    *   If we need to drop the cache for this file we'll just remove this folder.
    *
-   * We expose this method for testing purposes.
-   *
    */
-  public generateCacheFolderName(filePath) {
+  private generateCacheFolderName(filePath) {
     const tokens = filePath.split("/");
     const fileName = tokens.pop();
 
@@ -241,6 +245,12 @@ export class InFilesCache {
       ? `${tokens.join("-")}-${fileNameWithoutExtension}`
       : fileNameWithoutExtension;
   }
+
+  /**
+   * The cacheFolderPath should be relative to the
+   *   application root folder or absolute.
+   */
+  constructor(private cacheFolderPath) {}
 
   /**
    * File names depend on fileContent.

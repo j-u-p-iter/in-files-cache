@@ -24,18 +24,13 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
 
         /**
          * Creates cache file with fileContent as InFilesCache does. 
          *
          */
         await outputFile(
-          path.join(
-            cacheFolderPath,
-            cacheFolderName,
-            cacheFileName
-          ),
+          `./src/cache/someFile/${cacheFileName}`,
           fileContent,
         );
 
@@ -65,7 +60,6 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
         const realFilePath = path.resolve(__dirname, '..', fileName);
 
         /**
@@ -79,11 +73,7 @@ describe('InFilesCache', () => {
          *
          */
         await outputFile(
-          path.join(
-            cacheFolderPath,
-            cacheFolderName,
-            cacheFileName
-          ),
+          `./src/cache/someFile/${cacheFileName}`,
           fileContent,
         );
 
@@ -99,6 +89,36 @@ describe('InFilesCache', () => {
 
         await remove(cacheFolderPath);
       });
+
+      it('throws an error if there is no such a file', async () => {
+        const fileContent = 'some content';
+        const fileName = 'someFile1.txt'
+        const fileExtension = '.txt'
+
+        const cacheFolderPath = path.join(__dirname, '../src/cache');
+        const inFilesCache = new InFilesCache(cacheFolderPath);
+        const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
+
+        /**
+         * Creates cache file with fileContent 
+         *   as InFilesCache does. 
+         *
+         */
+        await outputFile(
+          `./src/cache/someFile/${cacheFileName}`,
+          fileContent,
+        );
+
+        /**
+         * Here we do not pass fileContent, because the file is "real",
+         *   and class should read it from the file itself.
+         *
+         */
+        await expect(inFilesCache.get({
+          filePath: fileName,
+          fileExtension,
+        })).rejects.toThrow('There is no such a file: someFile1.txt');
+      });
     });
   });
 
@@ -113,7 +133,6 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
        
         /**
          * Here we pass fileContent, because the file is "virtual",
@@ -131,11 +150,7 @@ describe('InFilesCache', () => {
          *
          */
         const cacheFile = await readFile(
-          path.join(
-            cacheFolderPath,
-            cacheFolderName,
-            cacheFileName
-          ),
+          `./src/cache/someFile/${cacheFileName}`,
          'utf8'
         ); 
 
@@ -155,7 +170,6 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
         const realFilePath = path.resolve(__dirname, '..', fileName);
 
         /**
@@ -174,11 +188,7 @@ describe('InFilesCache', () => {
          *
          */
         const cacheFile = await readFile(
-          path.join(
-            cacheFolderPath,
-            cacheFolderName,
-            cacheFileName
-          ),
+          `./src/cache/someFile/${cacheFileName}`,
           'utf8'
         );
 
@@ -187,6 +197,20 @@ describe('InFilesCache', () => {
         await remove(cacheFolderPath);
 
         await remove(realFilePath); 
+      });
+
+      it('throws an error if there is no such a file', async () => {
+        const fileName = 'someFile.txt'
+        const fileExtension = '.txt'
+        const compiledFileContent = 'some compiled content';
+
+        const cacheFolderPath = path.join(__dirname, '../src/cache');
+        const inFilesCache = new InFilesCache(cacheFolderPath);
+
+        await expect(inFilesCache.set({
+          fileExtension,
+          filePath: fileName,
+        }, compiledFileContent)).rejects.toThrow('There is no such a file: someFile.txt');
       });
     });
   });
@@ -201,8 +225,7 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
-        const cacheFilePath = path.join(cacheFolderPath, cacheFolderName, cacheFileName);
+        const cacheFilePath = `./src/cache/someFile/${cacheFileName}`;
 
         /**
          * Creates cache file with fileContent as InFilesCache does. 
@@ -243,8 +266,7 @@ describe('InFilesCache', () => {
         const cacheFolderPath = path.join(__dirname, '../src/cache');
         const inFilesCache = new InFilesCache(cacheFolderPath);
         const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
-        const cacheFolderName = inFilesCache.generateCacheFolderName(fileName); 
-        const cacheFilePath = path.join(cacheFolderPath, cacheFolderName, cacheFileName);
+        const cacheFilePath = `./src/cache/someFile/${cacheFileName}`;
         const realFilePath = path.resolve(__dirname, '..', fileName);
 
         /**
