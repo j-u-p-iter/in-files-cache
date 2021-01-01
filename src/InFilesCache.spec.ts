@@ -2,6 +2,7 @@ import path from 'path';
 import { readFile, outputFile, remove, existsSync } from 'fs-extra';
 import { InFilesCache } from '.';
 
+
 describe('InFilesCache', () => {
   describe('generateHash(content)', () => {
     it('generates 10 length characters hash string', () => {
@@ -22,6 +23,38 @@ describe('InFilesCache', () => {
 
       const cacheFolderPath = path.join(__dirname, '../src/cache');
       const inFilesCache = new InFilesCache(cacheFolderPath);
+
+      /**
+        * Here we pass fileContent, because the file is "virtual",
+        *   but we need fileContent to generate correct result fileName.
+        *
+        */
+      const resultCacheFileContent = await inFilesCache.get({
+        filePath: fileName,
+        fileContent,
+        fileExtension,
+      });
+
+      expect(resultCacheFileContent).toBe(null);
+    });
+
+    it('throws an error if there are some issues with reading a cache file', async () => {
+      const fileContent = 'some content';
+      const fileName = 'someFolder/someFile.txt'
+      const fileExtension = '.txt'
+
+      const cacheFolderPath = path.join(__dirname, '../src/cache');
+      const inFilesCache = new InFilesCache(cacheFolderPath);
+      const cacheFileName = inFilesCache.generateCacheFileName(fileContent, fileExtension);
+
+      /**
+        * Creates cache file with fileContent as InFilesCache does. 
+        *
+        */
+      await outputFile(
+        `./src/cache/someFile/${cacheFileName}`,
+        fileContent,
+      );
 
       /**
         * Here we pass fileContent, because the file is "virtual",
