@@ -1,6 +1,6 @@
 import path from 'path';
 import { readFile, outputFile, remove, existsSync } from 'fs-extra';
-import { InFilesCache } from './InFilesCache';
+import { InFilesCache } from '.';
 
 describe('InFilesCache', () => {
   describe('generateHash(content)', () => {
@@ -15,6 +15,28 @@ describe('InFilesCache', () => {
   });
 
   describe('get(cacheParams)', () => {
+    it('returns null if there is no such a cache file', async () => {
+      const fileContent = 'some content';
+      const fileName = 'someFolder/someFile.txt'
+      const fileExtension = '.txt'
+
+      const cacheFolderPath = path.join(__dirname, '../src/cache');
+      const inFilesCache = new InFilesCache(cacheFolderPath);
+
+      /**
+        * Here we pass fileContent, because the file is "virtual",
+        *   but we need fileContent to generate correct result fileName.
+        *
+        */
+      const resultCacheFileContent = await inFilesCache.get({
+        filePath: fileName,
+        fileContent,
+        fileExtension,
+      });
+
+      expect(resultCacheFileContent).toBe(null);
+    });
+
     describe('with fileContent', () => {
       it('extracts cached content according to the cacheParams', async () => {
         const fileContent = 'some content';
