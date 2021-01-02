@@ -1,6 +1,6 @@
 {
   "name": "@j.u.p.iter/in-files-cache",
-  "version": "0.0.1",
+  "version": "0.0.0-semantically-released",
   "description": "The tool to cache data in files",
   "main": "dist/lib/index.js",
   "typings": "dist/types",
