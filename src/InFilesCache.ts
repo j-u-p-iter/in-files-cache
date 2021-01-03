@@ -1,4 +1,5 @@
 import { findPathToFile } from "@j.u.p.iter/find-path-to-file";
+import { SystemErrorCode } from "@j.u.p.iter/system-error-code";
 import crypto from "crypto";
 import { outputFileSync, readFileSync, removeSync } from "fs-extra";
 import path from "path";
@@ -25,19 +26,6 @@ export interface CacheParams {
   filePath: string;
   fileContent?: string;
   fileExtension: string;
-}
-
-/**
- * TODO: to extract into a separate package.
- *
- */
-export enum SystemErrorCode {
-  /**
-   * ENOENT (No such file or directory): Commonly raised by fs operations
-   *   to indicate that a component of the specified pathname does not exist.
-   *   No entity (file or directory) could be found by the given path.
-   */
-  NO_FILE_OR_DIRECTORY = "ENOENT"
 }
 
 /**
