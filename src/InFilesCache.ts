@@ -18,6 +18,7 @@ import path from "path";
  *   If the file is "virtual", in many cases, there's no extension at all.
  *
  */
+
 export interface CacheParams {
   /**
    * filePath should be relative to the cacheFolderPath
