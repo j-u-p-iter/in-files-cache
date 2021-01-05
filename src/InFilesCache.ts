@@ -54,7 +54,7 @@ export interface CacheParams {
 export class InFilesCache {
   private readFile(filePath) {
     try {
-      const fileContent = readFileSync(filePath, "utf8");
+      const fileContent = readFileSync(filePath).toString();
 
       return fileContent;
     } catch (error) {
