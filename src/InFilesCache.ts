@@ -19,6 +19,11 @@ import path from "path";
  *
  */
 
+/**
+ * TODO: fileExtension should be used from filePath
+ *   (for both, virtual and real, files) if fileXtension is not provided.
+ *
+ */
 export interface CacheParams {
   /**
    * filePath should be relative to the cacheFolderPath
@@ -219,7 +224,12 @@ export class InFilesCache {
    *
    */
   private generateCacheFolderName(filePath) {
-    const tokens = filePath.split("/");
+    /**
+     * Replaces slash in the beginning.
+     *   Otherwise tokens array will contain empty string as a first member.
+     *
+     */
+    const tokens = filePath.replace(/\//, "").split("/");
     const fileName = tokens.pop();
 
     /**
