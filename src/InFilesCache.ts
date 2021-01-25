@@ -57,6 +57,12 @@ export interface CacheParams {
  */
 
 export class InFilesCache {
+  /**
+   * An absolute path to the root project folder.
+   *
+   */
+  private appRootPath = null;
+
   private readFile(filePath) {
     try {
       const fileContent = readFileSync(filePath, "utf8");
@@ -140,9 +146,15 @@ export class InFilesCache {
    *
    */
   private async getAppRootFolderPath() {
+    if (this.appRootPath) {
+      return this.appRootPath;
+    }
+
     const { dirPath } = await findPathToFile("package.json");
 
-    return dirPath;
+    this.appRootPath = dirPath;
+
+    return this.appRootPath;
   }
 
   private async generatePathToFileCacheFolder(
